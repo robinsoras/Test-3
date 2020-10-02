@@ -4,17 +4,16 @@ import java.io.IOException;
 import java.net.Socket;
 
 public class HttpClient {
-    public HttpClient(String hostname, int port, String requestTarget) {
-    }
+    private final int responseCode;
 
-    public static void main(String[] args) throws IOException {
-        Socket socket = new Socket("urlecho.appspot.com", 80);
+    public HttpClient(String hostname, int port, String requestTarget) throws IOException {
+        Socket socket = new Socket(hostname, port);
 
         // Format as specified in the HTTP specification
         // Each line is separated by \r\n (CRLF)
         // The request ends with empty line (\r\n\r\n)
-        String request = "GET /echo?status=200&body=Hello%20world! HTTP/1.1\r\n" +
-        "Host: urlecho.appspot.com\r\n\r\n";
+        String request = "GET " + requestTarget + " HTTP/1.1\r\n" +
+                "Host: " + hostname + "\r\n\r\n";
         // Writes data to the server
         socket.getOutputStream().write(request.getBytes());
 
@@ -22,13 +21,29 @@ public class HttpClient {
         // (c = socket.getInputStream().read()) != -1 means
         // Assign the next value of "read()" to c and check if it's not -1
         // (-1 means end of data)
+        StringBuilder line = new StringBuilder();
         int c;
         while ((c = socket.getInputStream().read()) != -1) {
-            System.out.print((char)c);
+            // Stop reading at new line
+            if (c == '\n') {
+                break;
+            }
+            // Treats each byte as a character ("(char)") and prints it to the console
+            line.append((char)c);
         }
+        System.out.println((char)c);
+        String[] responseLineParts = line.toString().split(" ");
+        responseCode = Integer.parseInt(responseLineParts[1]);
+    }
+
+    public static void main(String[] args) throws IOException {
+        String hostname = "urlecho.appspot.com";
+        int port = 80;
+        String requestTarget = "/echo?status=200&body=Hello%20world!";
+        new HttpClient(hostname, port, requestTarget);
     }
 
     public int getResponseCode() {
-        return 200;
+        return responseCode;
     }
 }
